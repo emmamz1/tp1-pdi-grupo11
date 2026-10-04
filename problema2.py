@@ -58,7 +58,7 @@ def detectar_grilla(img_th):
     return filas, columnas
 
 
-# --- Analisis de caracteres -------------------------------------------------
+# --- Analisis de caracteres
 def obtener_caracteres(celda_th):
     """
     Obtiene las cajas (x, y, w, h) de los caracteres de una celda binaria,
@@ -66,7 +66,7 @@ def obtener_caracteres(celda_th):
     (ej.: la tilde de la Ñ) se unen en un solo caracter.
     """
     n, _, stats, _ = cv2.connectedComponentsWithStats(celda_th, 8, cv2.CV_32S)
-    stats = stats[1:]                              # descarta el fondo
+    stats = stats[1:]
     ix_area = stats[:, -1] > TH_AREA
     stats = stats[ix_area, :]
     stats = stats[np.argsort(stats[:, 0])]
@@ -74,7 +74,6 @@ def obtener_caracteres(celda_th):
     cajas = []
     for x, y, w, h, _ in stats:
         if cajas and x <= cajas[-1][0] + cajas[-1][2] - 1:
-            # Se superpone horizontalmente con el caracter anterior: unir
             cx, cy, cw, ch = cajas[-1]
             nx, ny = min(cx, x), min(cy, y)
             cajas[-1] = [nx, ny, max(cx + cw, x + w) - nx, max(cy + ch, y + h) - ny]
@@ -95,10 +94,6 @@ def contar_palabras(cajas):
             palabras += 1
     return palabras
 
-
-# --- Validacion de campos ---------------------------------------------------
-# Los espacios no cuentan como caracteres (no estan en el conjunto de caracteres
-# permitidos); solo separan palabras.
 def validar_legajo(n_car, n_pal):
     return n_car == 8 and n_pal == 1
 
@@ -128,12 +123,11 @@ def clasificar_condicion(caracter_th):
     agujeros = 0 if jerarquia is None else int(np.sum(jerarquia[0][:, 3] >= 0))
     if agujeros == 0:
         return "L"
-    # Fraccion de pixeles con tinta en la columna izquierda de la caja
+    #fraccion de pixeles con tinta en la columna izquierda de la caja
     columna_izq = caracter_th[:, :2].max(axis=1) > 0
     return "R" if columna_izq.mean() > 0.8 else "A"
 
 
-# --- Procesamiento de una planilla -----------------------------------------
 def procesar_planilla(ruta_imagen, mostrar=False):
     """
     Procesa y valida los campos de una planilla de calificaciones.
@@ -155,9 +149,8 @@ def procesar_planilla(ruta_imagen, mostrar=False):
 
     registros = []
     for r in range(N_REGISTROS):
-        ya, yb = filas[r][1] + 1, filas[r + 1][0]           # interior de la fila
+        ya, yb = filas[r][1] + 1, filas[r + 1][0]        
         resultados, crop_nombre, condicion = [], None, None
-        # La columna 0 es "Nro.", los campos van de la 1 a la 6
         for c, validar in enumerate(VALIDADORES, start=1):
             xa, xb = columnas[c][1] + 1, columnas[c + 1][0]
             celda_th = img_th_ones[ya:yb, xa:xb]
@@ -197,8 +190,7 @@ def mostrar_pasos(img, img_th, filas, columnas):
     plt.tight_layout()
     plt.show()
 
-
-# --- Salidas ----------------------------------------------------------------
+#===Salidas=====
 def imprimir_reporte(registros):
     for reg in registros:
         print(f"> Registro {reg['id']}:")
@@ -220,13 +212,13 @@ def generar_imagen_desaprobados(registros, ruta_salida):
     Genera una unica imagen con el crop del Nombre y Apellido de los alumnos
     correctamente cargados con Condicion Final "R" (recupera) o "L" (libre).
     """
-    colores = {"R": (0, 140, 255), "L": (0, 0, 220)}       # BGR: naranja / rojo
+    colores = {"R": (0, 140, 255), "L": (0, 0, 220)}
     filas = []
     for reg in registros:
         if all(r == "OK" for r in reg["resultados"]) and reg["condicion"] in colores:
             crop = cv2.cvtColor(reg["crop_nombre"], cv2.COLOR_GRAY2BGR)
             crop = cv2.copyMakeBorder(crop, 4, 4, 4, 4, cv2.BORDER_CONSTANT, value=colores[reg["condicion"]])
-            # Indicador: la letra de la Condicion Final ("R" o "L") en el color del recuadro
+            # según 'R' o 'L, el color del recuadro
             etiqueta = np.full((crop.shape[0], 40, 3), 255, np.uint8)
             cv2.putText(etiqueta, reg["condicion"], (10, crop.shape[0] // 2 + 8),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, colores[reg["condicion"]], 2)
@@ -255,7 +247,7 @@ def main():
         return
 
     os.makedirs(DIR_SALIDA, exist_ok=True)
-    # Procesamiento ciclico de todas las planillas
+    #Procesamiento de todas las planillas
     for ruta in rutas:
         nombre = os.path.splitext(os.path.basename(ruta))[0]
         print(f"\n===== {nombre} =====")
