@@ -2,11 +2,6 @@
 """
 TUIA - Procesamiento de Imagenes I
 Trabajo Practico N1 - Problema 2: Validacion de planilla de calificaciones
-
-Uso:
-    python problema2.py                      # procesa grade_sheet_*.png (excepto _empty)
-    python problema2.py planilla1.png ...    # procesa las imagenes indicadas
-    python problema2.py --mostrar            # ademas muestra los pasos intermedios
 """
 import csv
 import glob
@@ -17,12 +12,12 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# --- Parametros -------------------------------------------------------------
-TH_GRIS = 128            # umbral de binarizacion: pixel "tinta" si img < TH_GRIS
-TH_FILA = 0.5            # fraccion del ancho de la imagen para considerar linea horizontal
-TH_COL = 0.8             # fraccion del alto de la tabla para considerar linea vertical
-TH_AREA = 1              # area minima de una componente (descarta pixeles sueltos)
-TH_ESPACIO = 0.5         # gap > TH_ESPACIO * altura de caracter => separacion entre palabras
+# Parametros
+TH_GRIS = 128            
+TH_FILA = 0.5            
+TH_COL = 0.8             
+TH_AREA = 1              
+TH_ESPACIO = 0.5         
 N_REGISTROS = 20
 
 CAMPOS = ["Legajo", "Nombre y apellido", "Parcial 1", "Parcial 2", "Parcial 3", "Condición Final"]
@@ -30,7 +25,7 @@ CAMPOS_CSV = ["ID", "Legajo", "Nombre y Apellido", "Parcial 1", "Parcial 2", "Pa
 DIR_SALIDA = "resultados"
 
 
-# --- Deteccion de la grilla -------------------------------------------------
+#Deteccion de la grilla
 def detectar_lineas(mascara):
     """Devuelve [(inicio, fin), ...] de cada tramo consecutivo en True (lineas de >1 px)."""
     idx = np.flatnonzero(mascara)
@@ -49,7 +44,6 @@ def detectar_grilla(img_th):
     h, w = img_th.shape
     img_rows = np.sum(img_th, 1)
     filas = detectar_lineas(img_rows > TH_FILA * w)
-    # Las ultimas 21 lineas horizontales delimitan los 20 registros
     filas = filas[-(N_REGISTROS + 1):]
 
     y0, y1 = filas[0][0], filas[-1][1]
